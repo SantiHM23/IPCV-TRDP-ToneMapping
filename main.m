@@ -4,7 +4,7 @@
 %% Lab
 clc; clear all; close all;
 
-img = hdrread('tinterna.hdr');
+img = hdrread('cathedral.hdr');
 figure(1)
 imshow(img);
 img = rgb2lab(img);
@@ -48,22 +48,21 @@ imshow(img_local);
 %% RGB
 
 clc; clear all; 
-%close all;
+close all;
 
-img = hdrread('chairs.hdr');
+img = hdrread('tinterna.hdr');
 figure()
 imshow(img);
-img_average = img;
-img_geom = img;
-img_local = img;
 Rmax=100; % according to Edoardo (We think)
-n = 0.7;
+n = 1;
 e = 0.0001; % It should be very small number. Bigger number changes the values of the image & geometric mean increases than arithmatic mean.
 step = Divisor(img);
 %step = 64;
-step_spray = min(size(img,1),size(img,2));
+step_spray = ceil(sqrt((size(img,1))^2 + (size(img,2))^2));
+imwrite(img, 'original.png');
 %% Arithmetic average RGB
 
+img_average = img;
 for i =1:size(img,3)
     sigma1 = arthm_background(img(:,:,i));
     R(:,:,i) = img(:,:,i).^n./(img(:,:,i).^n+(sigma1.^n)); % what function to use for sigma
@@ -71,8 +70,10 @@ for i =1:size(img,3)
 end
  figure
  imshow(img_average);
+ imwrite(img_average, 'arithmetic.png');
 %% Geometric averaging with RGB
 
+img_geom = img;
 for i =1:size(img,3)
 sigma_g = geom_average(img(:,:,i),e);
 R(:,:,i) = img(:,:,i).^n./(img(:,:,i).^n+(sigma_g.^n)); % what function to use for sigma
@@ -80,7 +81,21 @@ img_geom(:,:,i)= R(:,:,i);
 end
 figure
 imshow(img_geom);
+imwrite(img_geom, 'geometric.png');
+%% Local kernel-based averaging with RGB
+
+img_local = img;
+for i =1:size(img,3)
+sigma_g = local_average(img(:,:,i),step,e);
+R(:,:,i) = img(:,:,i).^n./(img(:,:,i).^n+(sigma_g.^n)); % what function to use for sigma
+img_local(:,:,i)= R(:,:,i);
+end
+figure()
+imshow(img_local);
+imwrite(img_local, 'kernel.png');
 %% Local averaging with RGB Spray
+
+img_local_spray = img;
 t = cputime;
 for i =1:size(img,3)
 sigma_local{i} = local_average_spray(img(:,:,i),step_spray,e);
@@ -90,25 +105,34 @@ img_local_spray(:,:,i)= R(:,:,i);
 end
 figure()
 imshow(img_local_spray);
+imwrite(img_local_spray,'memorialspray.png');
 finalt = cputime-t;
 %% Local linear averaging with RGB
+
+img_local_linear = img;
 for i =1:size(img,3)
 sigma_local{i} = local_linear_combination(img(:,:,i),e);
 R(:,:,i) = img(:,:,i).^n./(img(:,:,i).^n+sigma_local{i}.^n); % what function to use for sigma
 img_local_linear(:,:,i)= R(:,:,i);
 %img_local = lab2rgb(img_local);
 end
-figure()
+figure
 imshow(img_local_linear);
+imwrite(img_local_linear, 'linear.png');
 %% Local convex averaging with RGB
+
+t = cputime;
+img_local_conv = img;
 for i =1:size(img,3)
-sigma_local{i} = local_convex(img(:,:,i),step,e);
+sigma_local{i} = local_convex(img(:,:,i),step, e);
 R(:,:,i) = img(:,:,i).^n./(img(:,:,i).^n+sigma_local{i}.^n); % what function to use for sigma
 img_local_conv(:,:,i)= R(:,:,i);
 %img_local = lab2rgb(img_local);
 end
 figure()
 imshow(img_local_conv);
+imwrite(img_local_conv, 'convex.png');
+finalt = cputime-t;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
